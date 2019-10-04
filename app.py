@@ -37,3 +37,8 @@ def create_merchant():
     merchant = db.Merchant(name=request.json['name'])
     return merchant.as_json()
 
+@app.route('/merchants/<name>')
+def show_merchant(name):
+    merchant = db.Merchant.get(name=name)
+    return merchant.as_json()
+
