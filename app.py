@@ -1,5 +1,4 @@
 from flask import Flask, render_template, escape, request
-from flask_login import LoginManager, UserMixin, login_required
 from pony.flask import Pony
 from pony.orm import Database, Required, Optional
 from datetime import datetime
@@ -17,24 +16,24 @@ app.config.update(dict(
 
 db = Database()
 
-class User(db.Entity, UserMixin):
-    login = Required(str, unique=True)
-    password = Required(str)
-    last_login = Optional(datetime)
+class Merchant(db.Entity):
+    name = Required(str, unique=True)
+
+    def as_json(self):
+        return { 'name': self.name }
 
 db.bind(**app.config['PONY'])
 db.generate_mapping(create_tables=True)
 
 Pony(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-@login_manager.user_loader
-def load_user(user_id):
-    return db.User.get(id=user_id)
 
 @app.route('/')
 def hello():
     name = request.args.get("name", "World")
     return f'Hello, {escape(name)}!'
+
+@app.route('/merchants', methods = ['POST'])
+def create_merchant():
+    merchant = db.Merchant(name=request.json['name'])
+    return merchant.as_json()
 
