@@ -1,6 +1,6 @@
 from flask import Flask, render_template, escape, request
 from pony.flask import Pony
-from pony.orm import Database, Required, Optional
+from pony.orm import Database, Required, Optional, PrimaryKey, Set
 from datetime import datetime
 
 app = Flask(__name__)
@@ -18,9 +18,22 @@ db = Database()
 
 class Merchant(db.Entity):
     name = Required(str, unique=True)
+    coupons = Set('Coupon')
 
     def as_json(self):
-        return { 'name': self.name }
+        coupons = [coupon.as_json() for coupon in self.coupons]
+        return { 'name': self.name, 'coupons': coupons }
+
+class Coupon(db.Entity):
+    id = PrimaryKey(int, auto=True)
+    merchant = Required(Merchant)
+    description = Required(str)
+
+    def as_json(self):
+        json = { 'id': self.id,
+                'merchant': self.merchant.name,
+                'description': self.description }
+        return json
 
 db.bind(**app.config['PONY'])
 db.generate_mapping(create_tables=True)
@@ -41,4 +54,18 @@ def create_merchant():
 def show_merchant(name):
     merchant = db.Merchant.get(name=name)
     return merchant.as_json()
+
+@app.route('/coupons', methods = ['POST'])
+def create_coupon():
+    coupon_data = request.json
+
+    merchant = db.Merchant.get(name=coupon_data['merchant'])
+    coupon = db.Coupon(merchant=merchant, description=coupon_data['description'])
+
+    return coupon.as_json()
+
+#  @app.route('/coupons')
+#  def index_coupons():
+#      coupons = select(coupon for coupon in Coupon)
+#      return [coupon.as_json() for coupon in coupons]
 
