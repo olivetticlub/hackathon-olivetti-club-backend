@@ -35,6 +35,7 @@ class Coupon(db.Entity):
 
     def as_json(self):
         json = { 'id': self.id,
+                'valid': self.valid(),
                 'merchant': self.merchant.name,
                 'description': self.description }
         return json
@@ -60,13 +61,15 @@ def show_merchant(name):
     return merchant.as_json()
 
 @app.route('/coupons', methods = ['POST'])
-def create_coupon():
+def create_coupons():
     coupon_data = request.json
 
+    count = int(coupon_data['count'])
     merchant = db.Merchant.get(name=coupon_data['merchant'])
-    coupon = db.Coupon(merchant=merchant, description=coupon_data['description'])
+    for i in range(count):
+        db.Coupon(merchant=merchant, description=coupon_data['description'])
 
-    return coupon.as_json()
+    return coupon_data
 
 @app.route('/coupons/consume', methods = ['POST'])
 def consume_coupon():
