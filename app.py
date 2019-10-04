@@ -1,6 +1,6 @@
 from flask import Flask, render_template, escape, request
 from pony.flask import Pony
-from pony.orm import Database, Required, Optional, PrimaryKey, Set
+from pony.orm import Database, Required, Optional, PrimaryKey, Set, select
 from datetime import datetime
 
 app = Flask(__name__)
@@ -28,6 +28,10 @@ class Coupon(db.Entity):
     id = PrimaryKey(int, auto=True)
     merchant = Required(Merchant)
     description = Required(str)
+    consumed = Required(bool, default=False)
+
+    def valid(self):
+        return not self.consumed
 
     def as_json(self):
         json = { 'id': self.id,
@@ -61,6 +65,13 @@ def create_coupon():
 
     merchant = db.Merchant.get(name=coupon_data['merchant'])
     coupon = db.Coupon(merchant=merchant, description=coupon_data['description'])
+
+    return coupon.as_json()
+
+@app.route('/coupons/consume', methods = ['POST'])
+def consume_coupon():
+    coupon = select(coupon for coupon in Coupon if coupon.valid()).random(1)[0]
+    coupon.consumed = True
 
     return coupon.as_json()
 
