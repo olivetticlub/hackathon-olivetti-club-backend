@@ -18,7 +18,8 @@ db = Database()
 
 class Merchant(db.Entity):
     name = Required(str, unique=True)
-    coupons = Set('Coupon')
+    coupons = Set('Coupon', reverse='merchant')
+    consumed_coupons = Set('Coupon', reverse='consumed_at')
 
     def as_json(self):
         coupons = [coupon.as_json() for coupon in self.coupons]
@@ -28,14 +29,18 @@ class Coupon(db.Entity):
     id = PrimaryKey(int, auto=True)
     merchant = Required(Merchant)
     description = Required(str)
-    consumed = Required(bool, default=False)
+    consumed_at = Optional(Merchant)
+
+    def consumed(self):
+        return self.consumed_at is not None
 
     def valid(self):
-        return not self.consumed
+        return not self.consumed()
 
     def as_json(self):
         json = { 'id': self.id,
                 'valid': self.valid(),
+                'consumed_at': self.consumed_at.name if self.consumed_at else None,
                 'merchant': self.merchant.name,
                 'description': self.description }
         return json
@@ -74,12 +79,8 @@ def create_coupons():
 @app.route('/coupons/consume', methods = ['POST'])
 def consume_coupon():
     coupon = select(coupon for coupon in Coupon if coupon.valid()).random(1)[0]
-    coupon.consumed = True
+    merchant = db.Merchant.get(name=request.json['merchant'])
+    coupon.consumed_at = merchant
 
     return coupon.as_json()
-
-#  @app.route('/coupons')
-#  def index_coupons():
-#      coupons = select(coupon for coupon in Coupon)
-#      return [coupon.as_json() for coupon in coupons]
 
