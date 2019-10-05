@@ -18,17 +18,41 @@ db = Database()
 
 class Merchant(db.Entity):
     name = Required(str, unique=True)
-    coupons = Set('Coupon', reverse='merchant')
-    consumed_coupons = Set('Coupon', reverse='consumed_at')
+    deals = Set('Deal')
+    consumed_coupons = Set('Coupon')
 
     def as_json(self):
-        coupons = [coupon.as_json() for coupon in self.coupons]
-        return { 'name': self.name, 'coupons': coupons }
+        deals = [deal.as_json() for deal in self.deals]
+        return { 'name': self.name, 'deals': deals }
+
+class Deal(db.Entity):
+    id = PrimaryKey(int, auto=True)
+    coupons = Set('Coupon')
+    merchant = Required(Merchant)
+    description = Required(str)
+
+    def generated_coupons_count(self):
+        return len(self.coupons)
+
+    def consumed_coupons_count(self):
+        return len([coupon for coupon in self.coupons if coupon.consumed()])
+
+    def generate_coupons(self, count):
+        for i in range(count):
+            db.Coupon(deal=self)
+
+    def as_json(self):
+        json = { 'id': self.id,
+                'merchant': self.merchant.name,
+                'description': self.description,
+                'generated_coupons_count': self.generated_coupons_count(),
+                'consumed_coupons_count': self.consumed_coupons_count()
+                }
+        return json
 
 class Coupon(db.Entity):
     id = PrimaryKey(int, auto=True)
-    merchant = Required(Merchant)
-    description = Required(str)
+    deal = Required(Deal)
     consumed_at = Optional(Merchant)
 
     def consumed(self):
@@ -38,12 +62,13 @@ class Coupon(db.Entity):
         return not self.consumed()
 
     def as_json(self):
-        json = { 'id': self.id,
-                'valid': self.valid(),
-                'consumed_at': self.consumed_at.name if self.consumed_at else None,
-                'merchant': self.merchant.name,
-                'description': self.description }
-        return json
+        return { 'id': self.id,
+                'deal': {
+                    'id': self.deal.id,
+                    'description': self.deal.description,
+                    },
+                'consumed_at': self.consumed_at.name
+                }
 
 db.bind(**app.config['PONY'])
 db.generate_mapping(create_tables=True)
@@ -71,10 +96,10 @@ def create_coupons():
 
     count = int(coupon_data['count'])
     merchant = db.Merchant.get(name=coupon_data['merchant'])
-    for i in range(count):
-        db.Coupon(merchant=merchant, description=coupon_data['description'])
+    deal = db.Deal(merchant=merchant, description=coupon_data['description'])
+    deal.generate_coupons(count)
 
-    return coupon_data
+    return deal.as_json()
 
 @app.route('/coupons/consume', methods = ['POST'])
 def consume_coupon():
