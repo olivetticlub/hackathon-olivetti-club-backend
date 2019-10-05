@@ -81,6 +81,7 @@ class Coupon(db.Entity):
                 'deal': {
                     'id': self.deal.id,
                     'merchant': self.deal.merchant.name,
+                    'merchant_address': self.deal.merchant.address,
                     'description': self.deal.description,
                     },
                 'consumed_at': self.consumed_at.name
