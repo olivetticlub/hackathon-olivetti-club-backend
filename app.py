@@ -1,4 +1,5 @@
 from flask import Flask, render_template, escape, request
+from pony.orm import commit
 from .models import *
 
 app = Flask(__name__)
@@ -41,6 +42,7 @@ def create_coupons():
     merchant = db.Merchant.get(name=coupon_data['merchant'])
     deal = db.Deal(merchant=merchant, description=coupon_data['description'])
     deal.generate_coupons(count)
+    commit()
 
     return deal.as_json()
 
