@@ -8,8 +8,18 @@ class Merchant(db.Entity):
     vat_number = Required(str, unique=True)
     ateco = Required(str)
     address = Optional(str)
+    latitude = Optional(float)
+    longitude = Optional(float)
     deals = Set('Deal')
     consumed_coupons = Set('Coupon')
+
+    def before_insert(self):
+        location = geocoder.komoot(self.address)
+        self.latitude = location.lat
+        self.longitude = location.lng
+
+    def coordinates(self):
+        return dict(lat=self.latitude, lng=self.longitude)
 
     def as_json(self):
         deals = [deal.as_json() for deal in self.deals]
@@ -18,6 +28,7 @@ class Merchant(db.Entity):
                 'vat_number': self.vat_number,
                 'ateco': self.ateco,
                 'address': self.address,
+                'coordinates': self.coordinates(),
                 'deals': deals
                 }
 

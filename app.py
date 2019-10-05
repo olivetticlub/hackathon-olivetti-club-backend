@@ -27,6 +27,8 @@ def hello():
 def create_merchant():
     merchant_data = request.json
     merchant = db.Merchant(**merchant_data)
+    commit()
+
     return merchant.as_json()
 
 @app.route('/merchants/<name>')
