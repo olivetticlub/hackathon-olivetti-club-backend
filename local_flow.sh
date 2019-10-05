@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "+++ Creating merchant"
+curl -X POST -H 'Content-Type: application/json' -i http://localhost:5000/merchants --data '{"name": "danielefongo"}'
+
+echo "+++ Creating coupons"
+curl -X POST -H 'Content-Type: application/json' -i http://localhost:5000/coupons --data '{"merchant": "danielefongo", "description": "cazzettini al 50%","count":2}'
+
+echo "+++ Retrieving merchant info"
+curl http://localhost:5000/merchants/danielefongo
+
+echo "+++ Consuming a coupon"
+curl -X POST -H 'Content-Type: application/json' -i http://localhost:5000/coupons/consume --data '{"merchant": "danielefongo"}'
+
