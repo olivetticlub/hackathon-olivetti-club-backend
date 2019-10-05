@@ -18,12 +18,21 @@ db = Database()
 
 class Merchant(db.Entity):
     name = Required(str, unique=True)
+    vat_number = Required(str, unique=True)
+    ateco = Required(str)
+    address = Optional(str)
     deals = Set('Deal')
     consumed_coupons = Set('Coupon')
 
     def as_json(self):
         deals = [deal.as_json() for deal in self.deals]
-        return { 'name': self.name, 'deals': deals }
+        return {
+                'name': self.name,
+                'vat_number': self.vat_number,
+                'ateco': self.ateco,
+                'address': self.address,
+                'deals': deals
+                }
 
 class Deal(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -82,7 +91,8 @@ def hello():
 
 @app.route('/merchants', methods = ['POST'])
 def create_merchant():
-    merchant = db.Merchant(name=request.json['name'])
+    merchant_data = request.json
+    merchant = db.Merchant(**merchant_data)
     return merchant.as_json()
 
 @app.route('/merchants/<name>')
