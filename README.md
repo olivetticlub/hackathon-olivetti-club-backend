@@ -3,7 +3,7 @@
 Install the required dependencies:
 
 ```bash
-pip install flask pony geocoder
+pip install flask pony geocoder requests
 ```
 
 Run it locally:

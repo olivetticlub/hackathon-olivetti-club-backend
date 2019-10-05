@@ -1,5 +1,7 @@
+import geocoder
+
 from pony.flask import Pony
-from pony.orm import Database, Required, Optional, PrimaryKey, Set, select
+from pony.orm import Database, Required, Optional, PrimaryKey, Set, select, commit
 
 db = Database()
 
@@ -21,6 +23,9 @@ class Merchant(db.Entity):
     def coordinates(self):
         return dict(lat=self.latitude, lng=self.longitude)
 
+    def has_running_deals(self):
+        return any([deal.still_running() for deal in self.deals])
+
     def as_json(self):
         deals = [deal.as_json() for deal in self.deals]
         return {
@@ -38,15 +43,18 @@ class Deal(db.Entity):
     merchant = Required(Merchant)
     description = Required(str)
 
+    def generate_coupons(self, count):
+        for i in range(count):
+            db.Coupon(deal=self)
+
     def generated_coupons_count(self):
         return len(self.coupons)
 
     def consumed_coupons_count(self):
         return len([coupon for coupon in self.coupons if coupon.consumed()])
 
-    def generate_coupons(self, count):
-        for i in range(count):
-            db.Coupon(deal=self)
+    def still_running(self):
+        return any([coupon.valid() for coupon in self.coupons])
 
     def as_json(self):
         json = { 'id': self.id,
@@ -72,6 +80,7 @@ class Coupon(db.Entity):
         return { 'id': self.id,
                 'deal': {
                     'id': self.deal.id,
+                    'merchant': self.deal.merchant.name,
                     'description': self.deal.description,
                     },
                 'consumed_at': self.consumed_at.name

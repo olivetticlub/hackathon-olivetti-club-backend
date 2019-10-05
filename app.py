@@ -1,6 +1,7 @@
 from flask import Flask, render_template, escape, request
 from pony.orm import commit
 from .models import *
+from .ai_utils import best_coupon
 
 app = Flask(__name__)
 app.config.update(dict(
@@ -10,7 +11,8 @@ app.config.update(dict(
         'provider': 'sqlite',
         'filename': 'db.db3',
         'create_db': True
-    }
+    },
+    AI_ENABLED = False,
 ))
 
 db.bind(**app.config['PONY'])
@@ -48,11 +50,24 @@ def create_coupons():
 
     return deal.as_json()
 
+def _most_suitable_coupon(merchant):
+    if app.config['AI_ENABLED']:
+        return best_coupon(merchant)
+
+    coupons = select(
+            coupon for coupon in Coupon
+            if coupon.valid() and coupon.deal.merchant.name != merchant.name
+            ).random(1)
+
+    return coupons[0] if coupons else None
+
 @app.route('/coupons/consume', methods = ['POST'])
 def consume_coupon():
-    coupon = select(coupon for coupon in Coupon if coupon.valid()).random(1)[0]
     merchant = db.Merchant.get(name=request.json['merchant'])
-    coupon.consumed_at = merchant
+    coupon = _most_suitable_coupon(merchant)
+    if coupon is None:
+        return { 'message': 'No coupon available' }
 
+    coupon.consumed_at = merchant
     return coupon.as_json()
 
