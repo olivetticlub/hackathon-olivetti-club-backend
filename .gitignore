@@ -1,2 +1,4 @@
 db.db3
 __pycache__
+olivetti/*
+__init__.pyc
