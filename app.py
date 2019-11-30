@@ -2,6 +2,7 @@ from flask import Flask, render_template, escape, request
 from pony.orm import commit
 from .models import *
 from .ai_utils import best_coupon
+import random
 
 app = Flask(__name__)
 app.config.update(dict(
@@ -61,9 +62,18 @@ def _most_suitable_coupon(merchant):
 
     return coupons[0] if coupons else None
 
+def add_demo_merchant():
+    merchant = db.Merchant(name="demo-merchant", vat_number=str(random.randint(0,1000)), ateco = "585858" )
+    commit()
+    return merchant
+
 @app.route('/coupons/consume', methods = ['POST'])
 def consume_coupon():
     merchant = db.Merchant.get(name=request.json['merchant'])
+
+    if merchant is None and request.json['merchant'] == "demo-merchant":
+        merchant = add_demo_merchant()
+
     coupon = _most_suitable_coupon(merchant)
     if coupon is None:
         return { 'message': 'No coupon available' }
