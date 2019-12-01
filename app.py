@@ -1,10 +1,13 @@
 from flask import Flask, render_template, escape, request
+from flask_cors import CORS
 from pony.orm import commit
 from .models import *
 from .ai_utils import best_coupon
 import random
 
 app = Flask(__name__)
+CORS(app)
+
 app.config.update(dict(
     DEBUG = False,
     SECRET_KEY = 'secret_xxx',
