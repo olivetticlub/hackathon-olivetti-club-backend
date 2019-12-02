@@ -1,6 +1,6 @@
 from flask import Flask, render_template, escape, request
 from flask_cors import CORS
-from pony.orm import commit
+from pony.orm import commit, delete
 from .models import *
 from .ai_utils import best_coupon
 import random
@@ -84,3 +84,10 @@ def consume_coupon():
     coupon.consumed_at = merchant
     return coupon.as_json()
 
+@app.route('/reset', methods = ['GET'])
+def reset():
+    delete(coupon for coupon in Coupon)
+    delete(merchant for merchant in Merchant)
+    delete(deal for deal in Deal)
+
+    return { 'message': 'Deleted everything!' }
