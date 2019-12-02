@@ -92,6 +92,5 @@ def reset():
 
     return { 'message': 'Deleted everything!' }
 
-
-if __name__ == '__main__':
+def start():
     app.run(port=5000)
