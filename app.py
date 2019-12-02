@@ -1,8 +1,8 @@
 from flask import Flask, render_template, escape, request
 from flask_cors import CORS
 from pony.orm import commit, delete
-from .models import *
-from .ai_utils import best_coupon
+from models import *
+from ai_utils import best_coupon
 import random
 
 app = Flask(__name__)
@@ -91,3 +91,7 @@ def reset():
     delete(deal for deal in Deal)
 
     return { 'message': 'Deleted everything!' }
+
+
+if __name__ == '__main__':
+    app.run(port=5000)

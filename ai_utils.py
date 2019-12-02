@@ -1,6 +1,6 @@
 import requests
 from pony.orm import select
-from .models import Merchant, Coupon
+from models import Merchant, Coupon
 
 AI_URL = 'https://70f4680b.ngrok.io/merchants'
 
