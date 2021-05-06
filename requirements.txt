@@ -3,7 +3,7 @@ chardet==3.0.4
 Click==7.0
 decorator==4.4.1
 Flask==1.1.1
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 future==0.18.2
 geocoder==1.38.1
 idna==2.8
